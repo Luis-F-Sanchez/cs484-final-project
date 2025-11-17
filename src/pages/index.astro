@@ -1,17 +1,296 @@
 ---
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
 
+const convex = new ConvexHttpClient(import.meta.env.PUBLIC_CONVEX_URL);
+const inStockItems = await convex.query(api.inStock.list);
+const requestedItems = await convex.query(api.requestedItems.list);
+
+const sortedRequested = requestedItems.sort(
+  (a: any, b: any) => b.upvotes - b.downvotes - (a.upvotes - a.downvotes)
+);
 ---
 
 <html lang="en">
-  <head><title>Food Coop</title></head>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Food Coop - Home</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      nav {
+        margin-bottom: 20px;
+        padding: 10px;
+        background: #f0f0f0;
+      }
+      nav a {
+        margin-right: 15px;
+        text-decoration: none;
+        color: #0066cc;
+      }
+      .wallet-info {
+        background: #e8f4f8;
+        padding: 10px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+      }
+      .section {
+        margin-bottom: 40px;
+      }
+      .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+      }
+      .item-card {
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 8px;
+      }
+      .item-card h4 {
+        margin-top: 0;
+      }
+      .price {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #2a9d2a;
+      }
+      .stock {
+        color: #666;
+        font-size: 0.9em;
+      }
+      button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .buy-btn {
+        background: #0066cc;
+        color: white;
+      }
+      .buy-btn:hover {
+        background: #0052a3;
+      }
+      .vote-btn {
+        background: #f0f0f0;
+        margin-right: 5px;
+      }
+      .vote-btn:hover {
+        background: #e0e0e0;
+      }
+      .link-form {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 5px;
+      }
+      .link-form input {
+        width: 100%;
+        padding: 8px;
+        margin: 10px 0;
+      }
+      .link-form button {
+        background: #2a9d2a;
+        color: white;
+      }
+      .contact-btn {
+        background: #ff6b00;
+        color: white;
+        padding: 10px 20px;
+      }
+    </style>
+  </head>
   <body>
-    <h1>Food Coop</h1>
+    <h1>🛒 Food Coop</h1>
     <nav>
+      <a href="/">Home</a>
       <a href="/contribute">Submit a Contribution</a>
+      <a href="/admin">Admin Panel</a>
       <a href="/wallet">My Wallet</a>
+      <a href="/contact">Contact Administrator</a>
     </nav>
 
-    <h2>In Stock</h2>
-    <!-- temporary hard-coded items; replace with real data later -->
+    <div class="wallet-info">
+      <strong>Your Balance:</strong> $<span id="balance">0.00</span>
+      <button
+        onclick="addFunds()"
+        style="margin-left: 20px; background: #2a9d2a; color: white;"
+        >Add $10</button
+      >
+    </div>
+
+    <div class="section">
+      <h2>🌟 Most Requested Items</h2>
+      {
+        sortedRequested.length === 0 ? (
+          <p>No requested items yet.</p>
+        ) : (
+          <div class="items-grid">
+            {sortedRequested.map((item: any) => (
+              <div class="item-card">
+                <h4>{item.itemName}</h4>
+                <p>
+                  Net Votes: {item.upvotes - item.downvotes} (👍 {item.upvotes}{" "}
+                  / 👎 {item.downvotes})
+                </p>
+                <a href={item.link} target="_blank">
+                  View on Costco
+                </a>
+                <br />
+                <button class="vote-btn" onclick={`vote('${item._id}', true)`}>
+                  👍 Upvote
+                </button>
+                <button class="vote-btn" onclick={`vote('${item._id}', false)`}>
+                  👎 Downvote
+                </button>
+              </div>
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    <div class="section">
+      <h2>📦 In Stock</h2>
+      {
+        inStockItems.length === 0 ? (
+          <p>No items in stock yet. Be the first to contribute!</p>
+        ) : (
+          <div class="items-grid">
+            {inStockItems.map((item: any) => (
+              <div class="item-card">
+                <h4>{item.itemName}</h4>
+                <p class="price">${item.price.toFixed(2)}</p>
+                <p class="stock">Stock: {item.stockRemaining} remaining</p>
+                {item.link && (
+                  <a href={item.link} target="_blank">
+                    View on Costco
+                  </a>
+                )}
+                <br />
+                <button
+                  class="buy-btn"
+                  onclick={`buyItem('${item._id}', ${item.price})`}
+                  disabled={item.stockRemaining === 0}
+                >
+                  {item.stockRemaining === 0 ? "Out of Stock" : "Buy Now"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    <div class="section">
+      <h3>💡 Submit a Costco Link for Review</h3>
+      <div class="link-form">
+        <form id="link-form">
+          <input type="text" id="item-name" placeholder="Item Name" required />
+          <input
+            type="url"
+            id="costco-link"
+            placeholder="Costco Link"
+            required
+          />
+          <button type="submit">Submit Link</button>
+        </form>
+        <div id="link-message"></div>
+      </div>
+    </div>
+
+    <script>
+      import { ConvexHttpClient } from "convex/browser";
+      import { api } from "../../convex/_generated/api";
+
+      const convex = new ConvexHttpClient(import.meta.env.PUBLIC_CONVEX_URL);
+
+      let userId = localStorage.getItem("userId") || "";
+      let balance = parseFloat(localStorage.getItem("balance") || "0");
+
+      const balanceEl = document.getElementById("balance");
+      if (balanceEl) balanceEl.textContent = balance.toFixed(2);
+
+      if (!userId) {
+        convex
+          .mutation(api.users.getOrCreate, { uin: "demo-user-" + Date.now() })
+          .then((id: string) => {
+            userId = id;
+            localStorage.setItem("userId", id);
+          });
+      }
+
+      (window as any).addFunds = () => {
+        balance += 10;
+        localStorage.setItem("balance", balance.toString());
+        const el = document.getElementById("balance");
+        if (el) el.textContent = balance.toFixed(2);
+        alert("Added $10 to your balance!");
+      };
+
+      (window as any).buyItem = (productId: string, price: number) => {
+        if (balance < price) {
+          alert("Insufficient balance! Please add funds.");
+          return;
+        }
+
+        balance -= price;
+        localStorage.setItem("balance", balance.toString());
+        const el = document.getElementById("balance");
+        if (el) el.textContent = balance.toFixed(2);
+        alert(`Purchase successful! Remaining balance: $${balance.toFixed(2)}`);
+        location.reload();
+      };
+
+      (window as any).vote = async (itemId: string, isUpvote: boolean) => {
+        try {
+          await convex.mutation(api.requestedItems.vote, {
+            id: itemId as any,
+            isUpvote,
+          });
+          location.reload();
+        } catch (error) {
+          console.error("Error voting:", error);
+        }
+      };
+
+      const linkForm = document.getElementById("link-form");
+      if (linkForm) {
+        linkForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const itemNameEl = document.getElementById(
+            "item-name"
+          ) as HTMLInputElement;
+          const linkEl = document.getElementById(
+            "costco-link"
+          ) as HTMLInputElement;
+          const messageDiv = document.getElementById("link-message");
+
+          if (!itemNameEl || !linkEl || !messageDiv) return;
+
+          const itemName = itemNameEl.value;
+          const link = linkEl.value;
+
+          try {
+            await convex.mutation(api.requestedItems.create, {
+              itemName,
+              link,
+            });
+            messageDiv.textContent = "✓ Link submitted for review!";
+            messageDiv.style.color = "green";
+            (e.target as HTMLFormElement).reset();
+          } catch (error) {
+            messageDiv.textContent = "✗ Error submitting link.";
+            messageDiv.style.color = "red";
+          }
+        });
+      }
+    </script>
   </body>
 </html>

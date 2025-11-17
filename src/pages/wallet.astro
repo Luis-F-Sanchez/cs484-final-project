@@ -1,0 +1,236 @@
+---
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(import.meta.env.PUBLIC_CONVEX_URL);
+const contributions = await convex.query(api.contributions.list);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>My Wallet - Food Coop</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      nav {
+        margin-bottom: 20px;
+        padding: 10px;
+        background: #f0f0f0;
+      }
+      nav a {
+        margin-right: 15px;
+        text-decoration: none;
+        color: #0066cc;
+      }
+      .wallet-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+      }
+      .balance-display {
+        font-size: 3em;
+        font-weight: bold;
+        margin: 10px 0;
+      }
+      .action-buttons {
+        margin-top: 20px;
+      }
+      .action-buttons button {
+        padding: 12px 24px;
+        margin-right: 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .add-funds {
+        background: #2a9d2a;
+        color: white;
+      }
+      .section {
+        margin-bottom: 30px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      th {
+        background: #f0f0f0;
+        font-weight: bold;
+      }
+      .positive {
+        color: #2a9d2a;
+      }
+      .negative {
+        color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🛒 Food Coop</h1>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/contribute">Submit a Contribution</a>
+      <a href="/admin">Admin Panel</a>
+      <a href="/wallet">My Wallet</a>
+      <a href="/contact">Contact Administrator</a>
+    </nav>
+
+    <div class="wallet-header">
+      <h2>💰 Your Wallet</h2>
+      <div class="balance-display">$<span id="balance">0.00</span></div>
+      <div class="action-buttons">
+        <button class="add-funds" onclick="addFunds(10)">Add $10</button>
+        <button class="add-funds" onclick="addFunds(25)">Add $25</button>
+        <button class="add-funds" onclick="addFunds(50)">Add $50</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>📊 Transaction History</h3>
+      <p>
+        <em
+          >Note: For MVP, transaction history is simulated locally. Full
+          purchase history will be implemented with authentication.</em>
+      </p>
+      <table id="transactions">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="4" style="text-align: center; padding: 20px;"
+              >No transactions yet. Start by adding funds or making a
+              contribution!</td
+            >
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>🎁 Your Contributions</h3>
+      {
+        contributions.length === 0 ? (
+          <p>
+            You haven't made any contributions yet.{" "}
+            <a href="/contribute">Submit your first contribution!</a>
+          </p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Reimbursed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contributions.map((contrib: any) => (
+                <tr>
+                  <td>
+                    {new Date(contrib.timeContributed).toLocaleDateString()}
+                  </td>
+                  <td>{contrib.itemName}</td>
+                  <td>{contrib.quantity}</td>
+                  <td class="positive">${contrib.balanceAwarded.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )
+      }
+    </div>
+
+    <script>
+      interface Transaction {
+        date: string;
+        description: string;
+        amount: number;
+        balance: number;
+      }
+
+      let balance = parseFloat(localStorage.getItem("balance") || "0");
+      let transactions: Transaction[] = JSON.parse(
+        localStorage.getItem("transactions") || "[]"
+      );
+
+      const balanceEl = document.getElementById("balance");
+      if (balanceEl) {
+        balanceEl.textContent = balance.toFixed(2);
+      }
+
+      const loadTransactions = (): void => {
+        const tbody = document.querySelector("#transactions tbody");
+        if (!tbody || transactions.length === 0) return;
+
+        tbody.innerHTML = transactions
+          .map(
+            (t: Transaction) => `
+          <tr>
+            <td>${new Date(t.date).toLocaleDateString()}</td>
+            <td>${t.description}</td>
+            <td class="${t.amount >= 0 ? "positive" : "negative"}">
+              ${t.amount >= 0 ? "+" : ""}$${t.amount.toFixed(2)}
+            </td>
+            <td>$${t.balance.toFixed(2)}</td>
+          </tr>
+        `
+          )
+          .join("");
+      };
+
+      const addTransaction = (description: string, amount: number): void => {
+        balance += amount;
+        transactions.unshift({
+          date: new Date().toISOString(),
+          description,
+          amount,
+          balance,
+        });
+
+        localStorage.setItem("balance", balance.toString());
+        localStorage.setItem("transactions", JSON.stringify(transactions));
+
+        const el = document.getElementById("balance");
+        if (el) {
+          el.textContent = balance.toFixed(2);
+        }
+        loadTransactions();
+      };
+
+      declare global {
+        interface Window {
+          addFunds: (amount: number) => void;
+        }
+      }
+
+      window.addFunds = (amount: number): void => {
+        addTransaction(`Added funds`, amount);
+        alert(`$${amount} added to your wallet!`);
+      };
+
+      loadTransactions();
+    </script>
+  </body>
+</html>
