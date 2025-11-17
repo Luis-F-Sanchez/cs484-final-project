@@ -2,9 +2,14 @@
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../convex/_generated/api";
 
-const convex = new ConvexHttpClient(import.meta.env.PUBLIC_CONVEX_URL);
-const inStockItems = await convex.query(api.inStock.list);
-const requestedItems = await convex.query(api.requestedItems.list);
+const convexUrl = import.meta.env.PUBLIC_CONVEX_URL;
+let inStockItems: any[] = [];
+let requestedItems: any[] = [];
+if (convexUrl) {
+  const convex = new ConvexHttpClient(convexUrl);
+  inStockItems = await convex.query(api.inStock.list);
+  requestedItems = await convex.query(api.requestedItems.list);
+}
 
 const sortedRequested = requestedItems.sort(
   (a: any, b: any) => b.upvotes - b.downvotes - (a.upvotes - a.downvotes)
@@ -205,7 +210,7 @@ const sortedRequested = requestedItems.sort(
       </div>
     </div>
 
-    <script>
+    <script type="module" lang="ts">
       import { ConvexHttpClient } from "convex/browser";
       import { api } from "../../convex/_generated/api";
 
