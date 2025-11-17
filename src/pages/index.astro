@@ -1,16 +1,13 @@
 ---
-
+import MainLayout from "./layouts/MainLayout.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<MainLayout title="Food Coop - Home">
+  <h2>In Stock Items</h2>
+  <p>This is where we'll list items available in the Food Coop.</p>
+
+  <ul>
+    <li>Example item: Fruit Snacks - $0.50 per unit - 20 units remaining</li>
+    <li>Example item: Gum - $0.25 per unit - 15 units remaining</li>
+  </ul>
+</MainLayout>

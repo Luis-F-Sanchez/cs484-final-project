@@ -1,0 +1,27 @@
+---
+const { title = "Food Coop" } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+
+  <body>
+    <header style="padding: 1rem; border-bottom: 1px solid #ddd;">
+      <h1 style="margin: 0;">Food Coop</h1>
+
+      <nav style="margin-top: 0.5rem; display: flex; gap: 1rem;">
+        <a href="/">Home</a>
+        <a href="/contribute">Submit a Contribution</a>
+        <a href="/wallet">My Wallet</a>
+      </nav>
+    </header>
+
+    <main style="padding: 1rem;">
+      <slot />
+    </main>
+  </body>
+</html>
