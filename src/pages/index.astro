@@ -1,13 +1,15 @@
 ---
 import MainLayout from "./layouts/MainLayout.astro";
+import FakeStore from "./components/FakeStore.tsx";
 ---
 
-<MainLayout title="Food Coop - Home">
+<MainLayout title="Food Coop – Home">
   <h2>In Stock Items</h2>
-  <p>This is where we'll list items available in the Food Coop.</p>
+  <p>
+    Browse items currently available in the Food Coop. Click "Buy 1" to simulate a purchase
+    and see your fake balance change.
+  </p>
 
-  <ul>
-    <li>Example item: Fruit Snacks - $0.50 per unit - 20 units remaining</li>
-    <li>Example item: Gum - $0.25 per unit - 15 units remaining</li>
-  </ul>
+  <!-- React island: hydrates in the browser and manages its own state -->
+  <FakeStore client:load />
 </MainLayout>
