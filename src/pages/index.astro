@@ -210,10 +210,9 @@ const sortedRequested = requestedItems.sort(
       </div>
     </div>
 
-    <script type="module" lang="ts">
+    <script type="module">
       import { ConvexHttpClient } from "convex/browser";
       import { api } from "../../convex/_generated/api";
-
       const convex = new ConvexHttpClient(import.meta.env.PUBLIC_CONVEX_URL);
 
       let userId = localStorage.getItem("userId") || "";
@@ -225,13 +224,13 @@ const sortedRequested = requestedItems.sort(
       if (!userId) {
         convex
           .mutation(api.users.getOrCreate, { uin: "demo-user-" + Date.now() })
-          .then((id: string) => {
+          .then((id) => {
             userId = id;
             localStorage.setItem("userId", id);
           });
       }
 
-      (window as any).addFunds = () => {
+      window.addFunds = () => {
         balance += 10;
         localStorage.setItem("balance", balance.toString());
         const el = document.getElementById("balance");
@@ -239,7 +238,7 @@ const sortedRequested = requestedItems.sort(
         alert("Added $10 to your balance!");
       };
 
-      (window as any).buyItem = (productId: string, price: number) => {
+      window.buyItem = (productId, price) => {
         if (balance < price) {
           alert("Insufficient balance! Please add funds.");
           return;
@@ -253,10 +252,10 @@ const sortedRequested = requestedItems.sort(
         location.reload();
       };
 
-      (window as any).vote = async (itemId: string, isUpvote: boolean) => {
+      window.vote = async (itemId, isUpvote) => {
         try {
           await convex.mutation(api.requestedItems.vote, {
-            id: itemId as any,
+            id: itemId,
             isUpvote,
           });
           location.reload();
@@ -269,15 +268,12 @@ const sortedRequested = requestedItems.sort(
       if (linkForm) {
         linkForm.addEventListener("submit", async (e) => {
           e.preventDefault();
-          const itemNameEl = document.getElementById(
-            "item-name"
-          ) as HTMLInputElement;
-          const linkEl = document.getElementById(
-            "costco-link"
-          ) as HTMLInputElement;
+          const itemNameEl = document.getElementById("item-name");
+          const linkEl = document.getElementById("costco-link");
           const messageDiv = document.getElementById("link-message");
 
           if (!itemNameEl || !linkEl || !messageDiv) return;
+          if (!(itemNameEl instanceof HTMLInputElement) || !(linkEl instanceof HTMLInputElement)) return;
 
           const itemName = itemNameEl.value;
           const link = linkEl.value;
@@ -289,7 +285,8 @@ const sortedRequested = requestedItems.sort(
             });
             messageDiv.textContent = "✓ Link submitted for review!";
             messageDiv.style.color = "green";
-            (e.target as HTMLFormElement).reset();
+            const form = e.target;
+            if (form && form instanceof HTMLFormElement) form.reset();
           } catch (error) {
             messageDiv.textContent = "✗ Error submitting link.";
             messageDiv.style.color = "red";
