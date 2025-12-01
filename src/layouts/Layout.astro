@@ -12,6 +12,20 @@ import "../styles/global.css";
     <title>Astro Basics</title>
   </head>
   <body>
+    <nav class="border-b bg-white">
+      <div
+        class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3"
+      >
+        <a href="/" class="text-lg font-bold">Food Coop</a>
+        <ul class="flex items-center gap-6 text-sm">
+          <li><a href="/" class="hover:text-indigo-600">Store</a></li>
+          <li>
+            <a href="/contribute" class="hover:text-indigo-600">Contribute</a>
+          </li>
+          <li><a href="/wallet" class="hover:text-indigo-600">Wallet</a></li>
+        </ul>
+      </div>
+    </nav>
     <slot />
   </body>
 </html>
