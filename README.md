@@ -5,9 +5,13 @@ How to run my pronect. Clone it then run npm install. Then npm run dev. Next ste
 Deployment Me and Luis had issues deplying, I think each convex project only likes to be deployed once and if you delete that deployment you have to start a new projet If you want to deploy your version of the code for youself, use Vercel. Cloudflare keeps messing up. To deploy first when you are ready in the terminal write "npx convex deploy" and press y. Tge last line will be an url. you can get the same url from convex website of your project. When you go to vercel and deploy from github in the section for enviromnemt variables write CONVEX_URL = the link. Any time you change schema file for database it will update your dev verison but deploy version will only be updated if you do the npx convex deploy. It pushes changes.
 
 How the project is strucytres. All files mestioned will have commments 
+
 schema.ts - the tables schema for convex 
+
 queries.ts - the file with queries used - queries are used for table lookups and mutations are used for table modifications
+
 src/components/component name - react componets
+
 src/pages - we add components to pages
 
 No more convex specific files src/lib/convex.tsx - this file creates like something that allows convex to run with astro, it creates a convex client using your credentials. any time you make a react component that will need acces to the database you need to import withConvexProvider from this file and surround your component with that function call. See any of my components for an example.
