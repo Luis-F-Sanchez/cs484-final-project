@@ -19,3 +19,5 @@ IF YOU MAKE A COMPONENT THAT NEEDS DB ACCES SURROUND IT WITH WITHCONVEXPROVIDER
 It's really unfrutnate but I got a deployed version at https://food-coop-sej7.vercel.app/
 
 if we dont manage to deploy another way, any changes from our current repo I will just add to my deployed version manually.
+
+Also the template uses some tailwing CSS so like for component you add classname and some css property and it works
