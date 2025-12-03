@@ -15,9 +15,8 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { withConvexProvider } from "../lib/convex.tsx";
-import { TEST_USER_ID } from "../lib/testUser.tsx";
 
-export default withConvexProvider(function ContributeForm() {
+export default withConvexProvider(function ContributeForm({ token }: { token: string | null}) {
   // Set up mutations (database write operations) from Convex
   const addItem = useMutation(api.queries.inventory_addItem);           // Adds item to inventory
   const adjustBalance = useMutation(api.queries.users_adjustBalance);   // Updates user's balance
@@ -30,6 +29,12 @@ export default withConvexProvider(function ContributeForm() {
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
+
+    if (!token) {
+      setStatus("Please log in to contribute.");
+      return;
+    }
+
     e.preventDefault(); // Prevent page reload
     setStatus(null);    // Clear previous status message
 
@@ -50,7 +55,7 @@ export default withConvexProvider(function ContributeForm() {
       await addItem({ name: name.trim(), quantity: qtyNum, price: priceNum });
       
       // Step 2: Credit the user's balance with the total value
-      await adjustBalance({ userId: TEST_USER_ID, delta: totalSpent });
+      await adjustBalance({ token, delta: totalSpent });
 
       // Show success message and clear form
       setStatus(`Added "${name}" and credited $${totalSpent.toFixed(2)} to balance.`);
@@ -58,9 +63,15 @@ export default withConvexProvider(function ContributeForm() {
       setQuantity("");
       setUnitPrice("");
     } catch (err) {
-      console.error(err);
-      setStatus("Failed to contribute item. Please try again.");
+      const msg =
+        err instanceof Error ? err.message : "Failed to contribute item. Please try again.";
+      if (msg.toLowerCase().includes("unauthorized")) {
+        setStatus("Session expired or invalid. Please log in again on the Auth page.");
+      } else {
+        setStatus(msg);
+      }
     }
+    
   };
 
   // Render the form UI
@@ -108,16 +119,29 @@ export default withConvexProvider(function ContributeForm() {
         />
       </div>
 
+      {!token && (
+        <p className="text-sm text-gray-500">Please log in on the Auth page to contribute.</p>
+      )}
+
       {/* Submit Button */}
       <button
         type="submit"
-        className="w-full rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+        disabled={!token}
+        className="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
       >
         Contribute
       </button>
 
       {/* Status Message (success or error) */}
-      {status && <p className="text-sm text-gray-700">{status}</p>}
+      {status && (
+        <p
+          className={`text-sm ${
+            status.toLowerCase().includes("added") ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {status}
+        </p>
+      )}
     </form>
   );
 });

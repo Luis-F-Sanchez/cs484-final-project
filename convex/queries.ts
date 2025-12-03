@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-
+import type { MutationCtx, QueryCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 
 // ============================================
 // HOW TO CREATE QUERIES AND MUTATIONS
@@ -37,7 +38,6 @@ import { mutation, query } from "./_generated/server";
 // - .collect() - get all results
 // ============================================
 
-
 // Template
 export const create = mutation({
   args: {
@@ -57,24 +57,21 @@ export const list = query({
     return await ctx.db.query("comments").order("desc").collect();
   },
 });
-
 //Template ends
 
 /* Inventory */
-// QUERY: Get all inventory items, newest first
+// QUERY: returns all rows from the inventory table, newest first
 export const inventory_getAll = query({
   handler: async (ctx) => ctx.db.query("inventory").order("desc").collect(),
 });
 
-// MUTATION: Add a new item to inventory
+// MUTATION: inserts a new inventory item with name, quantity, and price
 export const inventory_addItem = mutation({
   args: { name: v.string(), quantity: v.number(), price: v.number() },
   handler: async (ctx, args) => ctx.db.insert("inventory", args),
 });
 
-
-
-// MUTATION: Decrease inventory quantity (e.g., after a sale)
+// MUTATION: subtracts amount from an inventory item's quantity
 export const inventory_decrement = mutation({
   args: { id: v.id("inventory"), amount: v.number() },
   handler: async (ctx, { id, amount }) => {
@@ -83,70 +80,58 @@ export const inventory_decrement = mutation({
     await ctx.db.patch(id, { quantity: Math.max(0, item.quantity - amount) });
   },
 });
+/* Inventory Ends */
 
 /* Users */
-// QUERY: Find a user by their userId
-export const users_getByUserId = query({
-  args: { userId: v.string() },
-  handler: async (ctx, { userId }) =>
-    ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("userId"), userId))
-      .first(),
-});
-
-// MUTATION: Create or update a user's balance (upsert = update or insert)
-export const users_upsert = mutation({
-  args: { userId: v.string(), balance: v.number() },
-  handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("userId"), args.userId))
-      .first();
-    return existing
-      ? (await ctx.db.patch(existing._id, { balance: args.balance }), existing._id)
-      : ctx.db.insert("users", args);
+// QUERY: given a token, resolves the session and returns the user's userId, username, and balance
+export const users_me = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const { user } = await requireSession(ctx, token);
+    return { userId: user.userId, username: user.username, balance: user.balance };
   },
 });
 
-// MUTATION: Add or subtract from a user's balance
+// MUTATION: given a token and balance, sets that user's balance
+export const users_upsert = mutation({
+  args: { token: v.string(), balance: v.number() },
+  handler: async (ctx, { token, balance }) => {
+    const { user } = await requireSession(ctx, token);
+    await ctx.db.patch(user._id, { balance });
+    return user._id;
+  },
+});
+
+// MUTATION: given a token and delta, adds delta to the curr. user's balance
 export const users_adjustBalance = mutation({
-  args: { userId: v.string(), delta: v.number() },
-  handler: async (ctx, { userId, delta }) => {
-    const user = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("userId"), userId))
-      .first();
-    if (!user) throw new Error("User not found");
+  args: { token: v.string(), delta: v.number() },
+  handler: async (ctx, { token, delta }) => {
+    const { user } = await requireSession(ctx, token);
     await ctx.db.patch(user._id, { balance: user.balance + delta });
   },
 });
+/* Users Ends */
 
 /* Purchases */
-// QUERY: Get all purchases for a specific user, newest first
+// QUERY: given a token, resolves the user and returns all purchase records for that userId, newest first
 export const purchases_listByUser = query({
-  args: { userId: v.string() },
-  handler: async (ctx, { userId }) =>
-    ctx.db
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const { user } = await requireSession(ctx, token);
+    return ctx.db
       .query("purchases")
-      .filter((q) => q.eq(q.field("userId"), userId))
+      .filter(q => q.eq(q.field("userId"), user.userId))
       .order("desc")
-      .collect(),
+      .collect();
+  },
 });
 
-
-
-//That one is vibecode 100 but it works
-// MUTATION: Process a complete purchase transaction
-// This is a complex mutation that:
-// 1. Validates user exists and has sufficient balance
-// 2. Validates inventory availability
-// 3. Deducts user balance
-// 4. Decrements inventory
-// 5. Records purchase history
+// MUTATION: given a token and an array of {inventoryId, quantity}, this resolves the user,
+// validates stock and balance, calculates totals, deducts balances, decrements inventory,
+// and inserts purchase records
 export const processPurchase = mutation({
   args: {
-    userId: v.string(),
+    token: v.string(),
     items: v.array(
       v.object({
         inventoryId: v.id("inventory"),
@@ -154,13 +139,10 @@ export const processPurchase = mutation({
       })
     ),
   },
-  handler: async (ctx, { userId, items }) => {
-    // 1. Get user
-    const user = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("userId"), userId))
-      .first();
-    if (!user) throw new Error("User not found");
+  handler: async (ctx, { token, items }) => {
+    // 1. Get user from session
+    const { user } = await requireSession(ctx, token);
+    const userId = user.userId;
 
     // 2. Calculate total cost and validate inventory
     let totalCost = 0;
@@ -218,5 +200,64 @@ export const processPurchase = mutation({
     }
 
     return { success: true, totalCost };
+  },
+});
+
+// MUTATION: given a username, if the user exists, create a session for them; else create a new user
+// with that username and a balance of 0, then create the session. Returns {token}
+export const auth_register = mutation({
+  args: { username: v.string() },
+  handler: async (ctx, { username }) => {
+    const existing = await ctx.db.query("users").filter(q => q.eq(q.field("username"), username)).first();
+    if (existing) return { token: await createSession(ctx, existing._id) };
+    const userId = await ctx.db.insert("users", { userId: username, username, balance: 0});
+    return { token: await createSession(ctx, userId) };
+  },
+});
+
+// MUTATION: given a username, find the user; if missing, throw an error, else create a session and return {token}
+export const auth_login = mutation({
+  args: { username: v.string() },
+  handler: async (ctx, { username }) => {
+    const user = await ctx.db.query("users").filter(q => q.eq(q.field("username"), username)).first();
+    if (!user) throw new Error("No such user");
+    return { token: await createSession(ctx, user._id)};
+  },
+})
+
+// HELPER FUNCTION: creates a pseudo-random token with a 1 week expiration and inserts it into the sessions table
+async function createSession(ctx: MutationCtx, userId: Id<"users">) {
+  const token = generateToken();
+  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+  await ctx.db.insert("sessions", { userId, token, expiresAt });
+  return token;
+}
+
+// HELPER FUNCTION: looks up a session by token, checks expiration, fetches the user, and throws unauthorized if invalid. Returns {user}
+async function requireSession(ctx: QueryCtx | MutationCtx, token: string) {
+  const session = await ctx.db.query("sessions").filter(q => q.eq(q.field("token"), token)).first();
+  if (!session || session.expiresAt < Date.now()) throw new Error("Unauthorized");
+  const user = await ctx.db.get(session.userId);
+  if (!user) throw new Error("Unauthorized");
+  return { user };
+}
+
+// builds a simple random string for demo tokens
+function generateToken() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+}
+
+// QUERY: given a token, returns the current user's userId, username, and balance, or null if the session is invalid
+export const auth_me = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    try {
+      const { user } = await requireSession(ctx, token);
+      return { userId: user.userId, username: user.username, balance: user.balance };
+    } catch {
+      return null;
+    }
   },
 });

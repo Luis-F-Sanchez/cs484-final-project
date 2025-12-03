@@ -42,21 +42,34 @@ import { v } from "convex/values";
 
 
 export default defineSchema({
+  // simple comment records (could convert to messages to admin?)
   comments: defineTable({
     author: v.string(),
     content: v.string(),
   }),
+
+  // represents store items and their stock
   inventory: defineTable({
     name: v.string(),
     quantity: v.number(),
     price: v.number(),
   }),
 
+  // stores the user account info and wallet balance, sessions point to these rows
   users: defineTable({
     userId: v.string(), // provider tokenIdentifier or app-specific ID
     balance: v.number(),
+    username: v.string(),
   }),
 
+  // holds auth tokens and their expiration
+  sessions: defineTable ({
+     userId: v.id("users"),
+     token: v.string(),
+     expiresAt: v.number(),
+  }),
+
+  // records purchase history per user
   purchases: defineTable({
     userId: v.string(),
     inventoryId: v.id("inventory"), // Reference to the inventory item

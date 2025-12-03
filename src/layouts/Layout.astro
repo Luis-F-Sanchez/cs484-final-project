@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import AuthStatus from "../components/AuthStatus.tsx";
 ---
 
 
@@ -12,21 +13,28 @@ import "../styles/global.css";
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>Astro Basics</title>
+    <title>UIC Food Coop</title>
   </head>
   <body>
     <nav class="border-b bg-white">
       <div
-        class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3"
+        class="flex w-full items-center px-6 py-4"
       >
-        <a href="/" class="text-lg font-bold">Food Coop</a>
-        <ul class="flex items-center gap-6 text-sm">
-          <li><a href="/" class="hover:text-indigo-600">Store</a></li>
-          <li>
-            <a href="/contribute" class="hover:text-indigo-600">Contribute</a>
-          </li>
-          <li><a href="/wallet" class="hover:text-indigo-600">Wallet</a></li>
-        </ul>
+        <div class="flex flex-1">
+          <a href="/" class="text-3xl font-extrabold tracking-tight hover:text-blue-600">Food Coop</a>
+        </div>
+        <div class="flex flex-1 justify-center">
+          <ul class="flex items-center gap-10 text-sm">
+            <li>
+              <a href="/contribute" class="text-xl font-bold tracking-tight hover:text-blue-600">Contribute</a>
+            </li>
+            <li><a href="/wallet" class="text-xl font-bold tracking-tight hover:text-blue-600">Wallet</a></li>
+            <li><a href="/auth" class="text-xl font-bold tracking-tight hover:text-blue-600">Login/Register</a></li>
+          </ul>
+        </div>
+        <div class="flex flex-1 justify-end">
+          <AuthStatus client:load />
+        </div>
       </div>
     </nav>
     <slot />

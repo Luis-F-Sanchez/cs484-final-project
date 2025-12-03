@@ -17,14 +17,13 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { withConvexProvider } from "../lib/convex.tsx";
-import { TEST_USER_ID } from "../lib/testUser.tsx";
 import React from "react";
 
 // Type definition: Selection tracks quantity selected for each item
 // Key = item ID, Value = quantity selected
 type Selection = Record<string, number>;
 
-export default withConvexProvider(function Store() {
+export default withConvexProvider(function Store({ token }: { token: string | null}) {
   // Query: Fetch all inventory items from database (real-time updates)
   const items = useQuery(api.queries.inventory_getAll);
   
@@ -68,6 +67,12 @@ export default withConvexProvider(function Store() {
 
   // Handle purchase button click
   const handleBuySelected = async () => {
+
+    if (!token) {
+      setStatus("Please log in to purchase");
+      return;
+    }
+
     setStatus(null); // Clear previous status messages
     
     // Convert selection object to array format expected by mutation
@@ -82,7 +87,7 @@ export default withConvexProvider(function Store() {
     try {
       // Call the processPurchase mutation to complete the transaction
       // This will validate balance, update inventory, deduct balance, and record purchase
-      await processPurchase({ userId: TEST_USER_ID, items: itemsToBuy });
+      await processPurchase({ token, items: itemsToBuy });
       
       // Show success message and clear selection
       setStatus(`Purchase successful! Spent $${totalPrice.toFixed(2)}`);
@@ -115,7 +120,7 @@ export default withConvexProvider(function Store() {
               <p className="mt-1 text-sm text-gray-600">In stock: {item.quantity}</p>
               
               {/* Price per unit */}
-              <p className="mt-2 text-xl font-bold text-indigo-600">
+              <p className="mt-2 text-xl font-bold text-blue-600">
                 ${item.price.toFixed(2)}
               </p>
 
@@ -141,15 +146,15 @@ export default withConvexProvider(function Store() {
         <div className="text-sm text-gray-700">
           {/* Display total items and price */}
           <p>Selected items: <span className="font-semibold">{totalSelected}</span></p>
-          <p>Total price: <span className="font-semibold text-indigo-600">${totalPrice.toFixed(2)}</span></p>
+          <p>Total price: <span className="font-semibold text-blue-600">${totalPrice.toFixed(2)}</span></p>
         </div>
         
         {/* Purchase button - disabled if nothing selected */}
         <button
           type="button"
           onClick={handleBuySelected}
-          disabled={totalSelected === 0}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-white transition-colors hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          disabled={!token || totalSelected === 0}
+          className="rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           Buy Selected
         </button>

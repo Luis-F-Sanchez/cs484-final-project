@@ -13,9 +13,12 @@
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",
+    "@auth/core": "^0.37.4",
+    "@convex-dev/auth": "^0.0.90",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "astro": "^5.16.0",
+    "bcryptjs": "^3.0.3",
     "convex": "^1.29.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

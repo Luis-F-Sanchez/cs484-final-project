@@ -1,12 +1,14 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import UserBalance from "../components/UserBalance.tsx";
-import PurchaseHistory from "../components/PurchaseHistory.tsx";
+import WalletShell from "../components/WalletShell";
 ---
+
+<!-- Imports the shared Layout and WalletShell -->
+<!-- This file is responsible for rendering the wallet page -->
+
 <Layout>
   <main class="mx-auto max-w-3xl px-4 py-8">
     <h1 class="text-2xl font-bold mb-4">Wallet</h1>
-    <UserBalance client:load />
-    <PurchaseHistory client:load />
+    <WalletShell client:load />
   </main>
 </Layout>

@@ -15,12 +15,21 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { withConvexProvider } from "../lib/convex.tsx";
-import { TEST_USER_ID } from "../lib/testUser.tsx";
 
-export default withConvexProvider(function PurchaseHistory() {
-  // Query the database for all purchases made by this user
-  // useQuery automatically re-fetches when data changes (real-time updates)
-  const purchases = useQuery(api.queries.purchases_listByUser, { userId: TEST_USER_ID });
+type Props = { token: string | null };
+
+export default withConvexProvider(function PurchaseHistory({ token }: Props) {
+  const purchases = token
+    ? useQuery(api.queries.purchases_listByUser, { token })
+    : null;
+
+  if (!token) {
+    return <p className="text-sm text-gray-500">Please log in to see purchases.</p>;
+  }
+
+  if (purchases === null) {
+    return <p className="text-sm text-gray-500">Please log in to see purchases.</p>;
+  }
 
   // Show loading state while data is being fetched
   if (purchases === undefined) {

@@ -1,10 +1,14 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import ContributeForm from "../components/ContributeForm.tsx";
+import ContributeShell from "../components/ContributeShell";
 ---
+
+<!-- Imports the Layout and ContributeShell -->
+<!-- This file is responsible for rendering the contribution page -->
+
 <Layout>
   <main class="mx-auto max-w-3xl px-4 py-8">
     <h1 class="text-2xl font-bold mb-4">Contribute</h1>
-    <ContributeForm client:load />
+    <ContributeShell client:load />
   </main>
 </Layout>

@@ -1,13 +1,13 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import Store from "../components/Store";
-import UserBalance from "../components/UserBalance.tsx";
-// test
+import HomeShell from "../components/HomeShell";
 ---
+
+<!-- Imports the shared Layout and HomeShell -->
+<!-- This file is responsible for rendering the home page -->
 
 <Layout>
   <main class="max-w-3xl mx-auto px-4 py-8">
-    <UserBalance client:load/>
-    <Store client:load />
+    <HomeShell client:load />
   </main>
 </Layout>

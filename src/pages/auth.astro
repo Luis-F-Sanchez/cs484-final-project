@@ -1,0 +1,14 @@
+---
+import Layout from "../layouts/Layout.astro";
+import AuthShell from "../components/AuthShell";
+---
+
+<!-- Imports the shared Layout and AuthShell -->
+<!-- This file is responsible for rendering the place to log in/register/logout -->
+
+<Layout>
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-4">Auth</h1>
+    <AuthShell client:load />
+  </main>
+</Layout>
