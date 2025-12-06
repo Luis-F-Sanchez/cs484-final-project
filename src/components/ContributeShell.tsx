@@ -1,4 +1,5 @@
 import ContributeForm from "./ContributeForm";
+import ContributionHistory from "./ContributionHistory";
 import { useSessionToken } from "../lib/useSessionToken";
 
 // =============================================================================
@@ -10,5 +11,10 @@ import { useSessionToken } from "../lib/useSessionToken";
 
 export default function ContributeShell() {
   const { token } = useSessionToken();
-  return <ContributeForm token={token} />;
+  return (
+    <div className="space-y-8">
+      <ContributeForm token={token} />
+      <ContributionHistory token={token} />
+    </div>
+  );
 }
