@@ -210,7 +210,11 @@ export const auth_register = mutation({
   handler: async (ctx, { username }) => {
     const existing = await ctx.db.query("users").filter(q => q.eq(q.field("username"), username)).first();
     if (existing) return { token: await createSession(ctx, existing._id) };
-    const userId = await ctx.db.insert("users", { userId: username, username, balance: 0, isAdmin: false, });
+
+    // Check if the username is "admin" or "Admin"
+    const isAdmin = username.toLowerCase() === "admin";
+
+    const userId = await ctx.db.insert("users", { userId: username, username, balance: 0, isAdmin });
     return { token: await createSession(ctx, userId) };
   },
 });
