@@ -73,6 +73,8 @@
 
         - src/components/AdminShell: token-aware admin dashboard that lists pending contributions and provided Approve/Deny actions
 
+        - src/components/AddFunds.tsx: allows the user to add funds to their account if they wish to do so without a contribution
+
 
 
 ========= BELOW IS OSKAR'S ORIGINAL READ ME (with some spelling corrections) ==========

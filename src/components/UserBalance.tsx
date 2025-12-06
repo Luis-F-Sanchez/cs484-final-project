@@ -78,10 +78,10 @@ export default withConvexProvider(function UserBalance({ variant = "card", token
           
           {/* Display user ID */}
           <p className="text-lg font-semibold ">
-            Welcome <span>{user.userId}</span>
+            Welcome, <span>{user.userId}</span>
           </p>
 
-          <h3 className="mt-1 text-gray-700">Balance</h3>
+          <h3 className="mt-1 text-gray-700">Your Current Balance:</h3>
           
           {/* Display current balance */}
           <p className="mt-2 text-2xl font-bold text-blue-600">
