@@ -303,7 +303,7 @@ export const pending_approve = mutation({
     if (!pending) throw new Error("Pending item not found");
 
     // add the item to inventory upon approval
-    await ctx.db.insert("inventory", {
+    const inventoryId = await ctx.db.insert("inventory", {
       name: pending.name,
       quantity: pending.quantity,
       price: pending.price,
@@ -315,6 +315,17 @@ export const pending_approve = mutation({
       const delta = pending.quantity * pending.price;
       await ctx.db.patch(user._id, { balance: user.balance + delta});
     }
+
+    //record the finalized contribution
+    await ctx.db.insert("contributions", {
+      userId: pending.userId,
+      inventoryId,
+      itemName: pending.name,
+      quantity: pending.quantity,
+      unitPrice: pending.price,
+      totalValue: pending.quantity * pending.price,
+      timestamp: pending.submittedAt,
+    });
 
     // remove the contribution request from pending
     await ctx.db.delete(pendingId);
@@ -341,3 +352,50 @@ export const inventory_delete = mutation({
     return { ok: true };
   },
 })
+
+
+    
+
+// QUERY: given a token, returns pending and finalized contributions for that user, newest first
+export const contributions_historyByUser = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const { user } = await requireSession(ctx, token);
+
+    const [pending, finalized] = await Promise.all([
+      ctx.db
+        .query("pending_contributions")
+        .filter(q => q.eq(q.field("userId"), user.userId))
+        .order("desc")
+        .collect(),
+      ctx.db
+        .query("contributions")
+        .filter(q => q.eq(q.field("userId"), user.userId))
+        .order("desc")
+        .collect(),
+    ]);
+
+    const pendingMapped = pending.map(p => ({
+      _id: p._id,
+      status: "pending" as const,
+      itemName: p.name,
+      quantity: p.quantity,
+      unitPrice: p.price,
+      totalValue: p.quantity * p.price,
+      timestamp: p.submittedAt,
+    }));
+
+    const finalizedMapped = finalized.map(c => ({
+      _id: c._id,
+      status: "approved" as const,
+      itemName: c.itemName,
+      quantity: c.quantity,
+      unitPrice: c.unitPrice,
+      totalValue: c.totalValue,
+      timestamp: c.timestamp,
+    }));
+
+    return [...pendingMapped, ...finalizedMapped].sort((a, b) => b.timestamp - a.timestamp);
+  },
+});
+

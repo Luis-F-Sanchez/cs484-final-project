@@ -88,5 +88,16 @@ export default defineSchema({
     quantity: v.number(),
     price: v.number(),
     submittedAt: v.number(),
-  })
+  }),
+
+  // records finalized contributions per user (accepted items added to inventory)
+   contributions: defineTable({
+    userId: v.string(),
+    inventoryId: v.id("inventory"), // reference to the contributed inventory item
+    itemName: v.string(), // denormalized for easy display
+    quantity: v.number(),
+    unitPrice: v.number(),
+    totalValue: v.number(),
+    timestamp: v.number(), // Date.now()
+  }),
 });
