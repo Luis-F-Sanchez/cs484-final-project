@@ -60,7 +60,7 @@ export default defineSchema({
     userId: v.string(), // provider tokenIdentifier or app-specific ID
     balance: v.number(),
     username: v.string(),
-    isAdmin: v.boolean(),
+    isAdmin: v.optional(v.boolean()),
   }),
 
   // holds auth tokens and their expiration
