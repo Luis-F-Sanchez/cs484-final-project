@@ -60,6 +60,7 @@ export default defineSchema({
     userId: v.string(), // provider tokenIdentifier or app-specific ID
     balance: v.number(),
     username: v.string(),
+    isAdmin: v.boolean(),
   }),
 
   // holds auth tokens and their expiration
@@ -78,5 +79,14 @@ export default defineSchema({
     unitPrice: v.number(),
     totalCost: v.number(),
     timestamp: v.number(), // Date.now()
+  }),
+
+  // record pending contributions for admin to either confirm or deny
+  pending_contributions: defineTable ({
+    userId: v.string(),
+    name: v.string(),
+    quantity: v.number(),
+    price: v.number(),
+    submittedAt: v.number(),
   })
 });

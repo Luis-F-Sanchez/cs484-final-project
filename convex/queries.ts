@@ -88,7 +88,7 @@ export const users_me = query({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const { user } = await requireSession(ctx, token);
-    return { userId: user.userId, username: user.username, balance: user.balance };
+    return { userId: user.userId, username: user.username, balance: user.balance, isAdmin: user.isAdmin};
   },
 });
 
@@ -210,7 +210,7 @@ export const auth_register = mutation({
   handler: async (ctx, { username }) => {
     const existing = await ctx.db.query("users").filter(q => q.eq(q.field("username"), username)).first();
     if (existing) return { token: await createSession(ctx, existing._id) };
-    const userId = await ctx.db.insert("users", { userId: username, username, balance: 0});
+    const userId = await ctx.db.insert("users", { userId: username, username, balance: 0, isAdmin: false, });
     return { token: await createSession(ctx, userId) };
   },
 });
@@ -242,7 +242,7 @@ async function requireSession(ctx: QueryCtx | MutationCtx, token: string) {
   return { user };
 }
 
-// builds a simple random string for demo tokens
+// HELPER FUNCTION: builds a simple random string for demo tokens
 function generateToken() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random()
     .toString(36)
@@ -261,3 +261,73 @@ export const auth_me = query({
     }
   },
 });
+
+// HELPER FUNCTION: resolves session and enforces admin access
+async function requireAdmin(ctx: QueryCtx | MutationCtx, token: string) {
+  const { user } = await requireSession(ctx, token);
+  if (!user.isAdmin) throw new Error("Forbidden");
+  return { user };
+}
+
+// MUTATION: user submits a contribution for admin review (does not hit inventory yet)
+export const pending_submit = mutation({
+  args: { token: v.string(), name: v.string(), quantity: v.number(), price: v.number() },
+  handler: async (ctx, { token, name, quantity, price }) => {
+    const { user } = await requireSession(ctx, token);
+    return ctx.db.insert("pending_contributions", {
+      userId: user.userId,
+      name: name.trim(),
+      quantity,
+      price,
+      submittedAt: Date.now(),
+    });
+  },
+})
+
+// QUERY: admin only, returns all pending contributions (newest at the top)
+export const pending_list = query({
+  args: {token: v.string() },
+  handler: async (convexToJson, { token }) => {
+    await requireAdmin(convexToJson, token);
+    return convexToJson.db.query("pending_contributions").order("desc").collect();
+  },
+});
+
+// MUTATION: admin only, approves a pending contribution by adding inventory, crediting the contributor, and deleting the pending entry
+export const pending_approve = mutation({
+  args: { token: v.string(), pendingId: v.id("pending_contributions") },
+  handler: async (ctx, { token, pendingId }) => {
+    await requireAdmin(ctx, token);
+
+    const pending = await ctx.db.get(pendingId);
+    if (!pending) throw new Error("Pending item not found");
+
+    // add the item to inventory upon approval
+    await ctx.db.insert("inventory", {
+      name: pending.name,
+      quantity: pending.quantity,
+      price: pending.price,
+    });
+
+    // credit the contributor's balance upon approval
+    const user = await ctx.db.query("users").filter(q => q.eq(q.field("userId"), pending.userId)).first();
+    if (user) {
+      const delta = pending.quantity * pending.price;
+      await ctx.db.patch(user._id, { balance: user.balance + delta});
+    }
+
+    // remove the contribution request from pending
+    await ctx.db.delete(pendingId);
+    return { ok: true};
+  }
+});
+
+// MUTATION: admin only, denies a pending contribution by deleting the pending entry (no inventory change)
+export const pending_deny = mutation({
+  args: { token: v.string(), pendingId: v.id("pending_contributions") },
+  handler: async (convexToJson, { token, pendingId }) => {
+    await requireAdmin(convexToJson, token);
+    await convexToJson.db.delete(pendingId);
+    return { ok: true} ;
+  }
+})

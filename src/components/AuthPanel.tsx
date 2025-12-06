@@ -105,13 +105,13 @@ function AuthPanelInner({ token, saveToken, clearToken }: Props) {
             className="rounded border border-gray-300 px-2 py-1 text-sm"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="your name"
+            placeholder="..."
           />
         </div>
         <div className="flex items-center gap-2">
           <button
             type="submit"
-            className="rounded bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
+            className="rounded bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700"
           >
             {mode === "login" ? "Login" : "Register"}
           </button>

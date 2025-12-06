@@ -23,12 +23,10 @@
 
     THINGS THAT STILL NEED TO BE WORKED ON
     ======================================
-        -   Adding a dedicated administrator account; for this account, an extra tab in the nav bar should be visible
-        -   a "request an item" tab for users; when users hit submit, the request gets sent to the admin tab
         -   a contact administrator tab for users; when the message is sent, it gets delivered to the admin tab
         -   a most requested items tab for users where they can vote on items that the admin adds from their tab of requests
         -   QR code scanning tab, this is a stretch, but if we could at least get this started that would be nice
-        -   maybe flesh out the contributions tab a little bit more so that it actually requires some verification steps from the admin before being added to the food coop
+        
 
 
     THESE ARE ALL OF THE FILES ALTERED UPON MY (Petr) PUSH TO GITHUB:
@@ -70,6 +68,10 @@
         -   src/pages/index.astro: home page using the shared layout and mounting HomeShell (token aware balance + store) on /
 
         - src/pages/wallet.astro: wallet page using the shared layout and mounting WalletShell (token aware balance + purchase history) on /wallet
+
+        - src/pages/admin.astro: administration page using the shared layout and mounting AdminShell (token aware account type) on /admin
+
+        - src/components/AdminShell: token-aware admin dashboard that lists pending contributions and provided Approve/Deny actions
 
 
 
