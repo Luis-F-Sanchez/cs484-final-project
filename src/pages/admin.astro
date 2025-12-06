@@ -1,0 +1,10 @@
+---
+import Layout from "../layouts/Layout.astro";
+import AdminShell from "../components/AdminShell";
+---
+<Layout>
+    <main class ="mx-auto max-w-4xl px-4 py-8">
+        <h1 class="text-2xl font-bold mb-4">Admin</h1>
+        <AdminShell client:load />
+    </main>
+</Layout>

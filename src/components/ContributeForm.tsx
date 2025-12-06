@@ -17,9 +17,7 @@ import { api } from "../../convex/_generated/api";
 import { withConvexProvider } from "../lib/convex.tsx";
 
 export default withConvexProvider(function ContributeForm({ token }: { token: string | null}) {
-  // Set up mutations (database write operations) from Convex
-  const addItem = useMutation(api.queries.inventory_addItem);           // Adds item to inventory
-  const adjustBalance = useMutation(api.queries.users_adjustBalance);   // Updates user's balance
+  const submitPending = useMutation(api.queries.pending_submit)
 
   // Form state - tracks user input
   const [name, setName] = useState("");           // Item name (e.g., "Apples")
@@ -51,20 +49,17 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
     const totalSpent = qtyNum * priceNum;
 
     try {
-      // Step 1: Add item to inventory
-      await addItem({ name: name.trim(), quantity: qtyNum, price: priceNum });
-      
-      // Step 2: Credit the user's balance with the total value
-      await adjustBalance({ token, delta: totalSpent });
+      // Add add item to Admin's inventory request list
+      await submitPending({ token, name: name.trim(), quantity: qtyNum, price: priceNum });
 
-      // Show success message and clear form
-      setStatus(`Added "${name}" and credited $${totalSpent.toFixed(2)} to balance.`);
+      // Show success message
+      setStatus(`Submitted "${name}" for approval`);
       setName("");
       setQuantity("");
       setUnitPrice("");
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "Failed to contribute item. Please try again.";
+        err instanceof Error ? err.message : "Failed to submit item contribution request. Please try again";
       if (msg.toLowerCase().includes("unauthorized")) {
         setStatus("Session expired or invalid. Please log in again on the Auth page.");
       } else {
@@ -77,7 +72,7 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
   // Render the form UI
   return (
     <form onSubmit={handleSubmit} className="max-w-md space-y-4">
-      <h2 className="text-xl font-semibold">Contribute an Item</h2>
+      <h2 className="text-xl font-semibold">Submit Contribution Request</h2>
 
       {/* Item Name Input */}
       <div>
@@ -129,7 +124,7 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
         disabled={!token}
         className="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
       >
-        Contribute
+        Submit Request
       </button>
 
       {/* Status Message (success or error) */}
