@@ -359,9 +359,6 @@ export const inventory_delete = mutation({
   },
 })
 
-
-    
-
 // QUERY: given a token, returns pending and finalized contributions for that user, newest first
 export const contributions_historyByUser = query({
   args: { token: v.string() },
