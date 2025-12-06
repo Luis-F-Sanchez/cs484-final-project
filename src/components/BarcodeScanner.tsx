@@ -50,7 +50,7 @@ export default function BarcodeScanner({ onResult }: BarcodeScannerProps) {
 
                 <label
                     htmlFor="barcode-upload"
-                    className={`cursor-pointer w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${scanning ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`cursor-pointer w-full flex items-center justify-center px-4 py-2 border shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${scanning ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                     {scanning ? "Scanning..." : "Scan Barcode from Image"}
                 </label>
