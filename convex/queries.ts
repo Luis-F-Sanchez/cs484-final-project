@@ -331,3 +331,13 @@ export const pending_deny = mutation({
     return { ok: true} ;
   }
 })
+
+// MUTATION: admin only, allows admin to straight up delete items from the food coop
+export const inventory_delete = mutation({
+  args: { token: v.string(), id: v.id("inventory") },
+  handler: async (ctx, { token, id }) => {
+    await requireAdmin(ctx, token);
+    await ctx.db.delete(id);
+    return { ok: true };
+  },
+})
