@@ -114,7 +114,7 @@ export default withConvexProvider(function Store({ token, isAdmin = false }: { t
   // Render the store UI
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Store</h2>
+      <h2 className="text-2xl font-bold">Stock</h2>
 
       {/* Grid of available items */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
