@@ -53,6 +53,7 @@ export default defineSchema({
     name: v.string(),
     quantity: v.number(),
     price: v.number(),
+    barcode: v.optional(v.string()),
   }),
 
   // stores the user account info and wallet balance, sessions point to these rows
@@ -64,10 +65,10 @@ export default defineSchema({
   }),
 
   // holds auth tokens and their expiration
-  sessions: defineTable ({
-     userId: v.id("users"),
-     token: v.string(),
-     expiresAt: v.number(),
+  sessions: defineTable({
+    userId: v.id("users"),
+    token: v.string(),
+    expiresAt: v.number(),
   }),
 
   // records purchase history per user
@@ -82,11 +83,12 @@ export default defineSchema({
   }),
 
   // record pending contributions for admin to either confirm or deny
-  pending_contributions: defineTable ({
+  pending_contributions: defineTable({
     userId: v.string(),
     name: v.string(),
     quantity: v.number(),
     price: v.number(),
+    barcode: v.optional(v.string()),
     submittedAt: v.number(),
   })
 });

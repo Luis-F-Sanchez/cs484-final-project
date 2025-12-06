@@ -14,13 +14,15 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import BarcodeScanner from "./BarcodeScanner";
 import { withConvexProvider } from "../lib/convex.tsx";
 
-export default withConvexProvider(function ContributeForm({ token }: { token: string | null}) {
+export default withConvexProvider(function ContributeForm({ token }: { token: string | null }) {
   const submitPending = useMutation(api.queries.pending_submit)
 
   // Form state - tracks user input
   const [name, setName] = useState("");           // Item name (e.g., "Apples")
+  const [barcode, setBarcode] = useState("");     // Scanned barcode or manual entry
   const [quantity, setQuantity] = useState("");   // How many units
   const [unitPrice, setUnitPrice] = useState(""); // Price per unit
   const [status, setStatus] = useState<string | null>(null); // Success/error messages
@@ -50,11 +52,12 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
 
     try {
       // Add add item to Admin's inventory request list
-      await submitPending({ token, name: name.trim(), quantity: qtyNum, price: priceNum });
+      await submitPending({ token, name: name.trim(), quantity: qtyNum, price: priceNum, barcode: barcode.trim() || undefined });
 
       // Show success message
       setStatus(`Submitted "${name}" for approval`);
       setName("");
+      setBarcode("");
       setQuantity("");
       setUnitPrice("");
     } catch (err) {
@@ -66,7 +69,7 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
         setStatus(msg);
       }
     }
-    
+
   };
 
   // Render the form UI
@@ -85,6 +88,23 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
           className="w-full rounded border px-3 py-2"
         />
       </div>
+
+      {/* Barcode Input & Scanner */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Barcode (Optional)</label>
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+            placeholder="Scan or type barcode"
+            className="w-full rounded border px-3 py-2"
+          />
+          <BarcodeScanner onResult={(result) => setBarcode(result)} />
+        </div>
+      </div>
+
+
 
       {/* Quantity Input */}
       <div>
@@ -130,9 +150,8 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
       {/* Status Message (success or error) */}
       {status && (
         <p
-          className={`text-sm ${
-            status.toLowerCase().includes("added") ? "text-green-600" : "text-red-600"
-          }`}
+          className={`text-sm ${status.toLowerCase().includes("added") ? "text-green-600" : "text-red-600"
+            }`}
         >
           {status}
         </p>
