@@ -23,12 +23,15 @@ import React from "react";
 // Key = item ID, Value = quantity selected
 type Selection = Record<string, number>;
 
-export default withConvexProvider(function Store({ token }: { token: string | null}) {
+export default withConvexProvider(function Store({ token, isAdmin = false }: { token: string | null; isAdmin?: boolean}) {
   // Query: Fetch all inventory items from database (real-time updates)
   const items = useQuery(api.queries.inventory_getAll);
   
   // Mutation: Process a complete purchase transaction
   const processPurchase = useMutation(api.queries.processPurchase);
+
+  // Mutation: allow admin to delete items from the store screen
+  const deleteItem = useMutation(api.queries.inventory_delete);
   
   // State: Track which items and quantities user has selected
   const [selection, setSelection] = React.useState<Selection>({});
@@ -98,6 +101,16 @@ export default withConvexProvider(function Store({ token }: { token: string | nu
     }
   };
 
+  // handle admin deleting items from the store screen
+  const handleDelete = async (id: string) => {
+    if (!token) return;
+    try {
+      await deleteItem({ token, id: id as any});
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Delete failed");
+    }
+  }
+
   // Render the store UI
   return (
     <div className="space-y-4">
@@ -135,6 +148,15 @@ export default withConvexProvider(function Store({ token }: { token: string | nu
                   onChange={(e) => setItemQty(item._id, item.quantity, e.target.value)}
                   className="w-20 rounded border px-2 py-1"
                 />
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item._id)}
+                    className="rounded border px-2 py-1 text-s text-red-700 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                )}
               </div>
             </div>
           );
