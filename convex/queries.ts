@@ -65,6 +65,14 @@ export const inventory_getAll = query({
   handler: async (ctx) => ctx.db.query("inventory").order("desc").collect(),
 });
 
+// QUERY: returns a single inventory item by barcode, or null if not found
+export const inventory_getByBarcode = query({
+  args: { barcode: v.string() },
+  handler: async (ctx, { barcode }) => {
+    return ctx.db.query("inventory").filter(q => q.eq(q.field("barcode"), barcode)).first();
+  },
+});
+
 // MUTATION: inserts a new inventory item with name, quantity, and price
 export const inventory_addItem = mutation({
   args: { name: v.string(), quantity: v.number(), price: v.number(), barcode: v.optional(v.string()) },
@@ -81,6 +89,38 @@ export const inventory_decrement = mutation({
   },
 });
 /* Inventory Ends */
+
+// MUTATION: directly adds stock to an existing item (bypassing approval) and credits the user
+export const inventory_restock = mutation({
+  args: { token: v.string(), barcode: v.string(), quantity: v.number(), price: v.number() },
+  handler: async (ctx, { token, barcode, quantity, price }) => {
+    const { user } = await requireSession(ctx, token);
+
+    // Verify item exists
+    const item = await ctx.db.query("inventory").filter(q => q.eq(q.field("barcode"), barcode)).first();
+    if (!item) throw new Error("Item not found");
+
+    // Update inventory
+    await ctx.db.patch(item._id, { quantity: item.quantity + quantity });
+
+    // Credit user
+    const totalValue = quantity * price;
+    await ctx.db.patch(user._id, { balance: user.balance + totalValue });
+
+    // Record contribution
+    await ctx.db.insert("contributions", {
+      userId: user.userId,
+      inventoryId: item._id,
+      itemName: item.name,
+      quantity,
+      unitPrice: price,
+      totalValue,
+      timestamp: Date.now(),
+    });
+
+    return { ok: true };
+  },
+});
 
 /* Users */
 // QUERY: given a token, resolves the session and returns the user's userId, username, and balance

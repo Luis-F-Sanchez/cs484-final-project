@@ -3,9 +3,11 @@ import { useState, useRef } from "react";
 
 interface BarcodeScannerProps {
     onResult: (result: string) => void;
+    buttonClassName?: string;
+    label?: string;
 }
 
-export default function BarcodeScanner({ onResult }: BarcodeScannerProps) {
+export default function BarcodeScanner({ onResult, buttonClassName, label = "Scan Barcode from Image" }: BarcodeScannerProps) {
     const [scanning, setScanning] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,9 +52,9 @@ export default function BarcodeScanner({ onResult }: BarcodeScannerProps) {
 
                 <label
                     htmlFor="barcode-upload"
-                    className={`cursor-pointer w-full flex items-center justify-center px-4 py-2 border shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${scanning ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={buttonClassName || `cursor-pointer w-full flex items-center justify-center px-4 py-2 border shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${scanning ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                    {scanning ? "Scanning..." : "Scan Barcode from Image"}
+                    {scanning ? "Scanning..." : label}
                 </label>
 
                 {error && (

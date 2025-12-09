@@ -40,8 +40,9 @@ export default withConvexProvider(function Store({ token, isAdmin = false }: { t
   // State: Display success/error messages to user
   const [status, setStatus] = React.useState<string | null>(null);
 
-  // State: Toggle barcode scanner visibility
-  const [showScanner, setShowScanner] = React.useState(false);
+  // State: Manual barcode input and quantity
+  const [barcodeInput, setBarcodeInput] = React.useState("");
+  const [qtyInput, setQtyInput] = React.useState("1");
 
   // Loading state: Show message while data is being fetched
   if (items === undefined) {
@@ -105,19 +106,37 @@ export default withConvexProvider(function Store({ token, isAdmin = false }: { t
     }
   };
 
-  // Handle barcode scan result
+  // Handle barcode scan result (populate field)
   const handleScan = (code: string) => {
-    // Find the item with the matching barcode
-    const item = availableItems.find(i => i.barcode === code);
+    setBarcodeInput(code);
+    setStatus(`Scanned barcode: ${code}`);
+  };
 
+  // Handle manual add from barcode input
+  const handleAddFromBarcode = () => {
+    const code = barcodeInput.trim();
+    const qtyToAdd = parseInt(qtyInput, 10);
+
+    if (!code) {
+      setStatus("Please enter or scan a barcode");
+      return;
+    }
+    if (isNaN(qtyToAdd) || qtyToAdd <= 0) {
+      setStatus("Please enter a valid quantity");
+      return;
+    }
+
+    const item = availableItems.find(i => i.barcode === code);
     if (item) {
-      // Increment quantity in selection (capped at stock)
       const currentQty = selection[item._id] || 0;
-      if (currentQty < item.quantity) {
-        setSelection(prev => ({ ...prev, [item._id]: currentQty + 1 }));
-        setStatus(`Added "${item.name}" to cart`);
+      if (currentQty + qtyToAdd <= item.quantity) {
+        setSelection(prev => ({ ...prev, [item._id]: currentQty + qtyToAdd }));
+        setStatus(`Added ${qtyToAdd} x "${item.name}" to cart`);
+        // Clear inputs after success
+        setBarcodeInput("");
+        setQtyInput("1");
       } else {
-        setStatus(`Cannot add "${item.name}": Not enough stock`);
+        setStatus(`Cannot add ${qtyToAdd} items. Only ${item.quantity - currentQty} more available.`);
       }
     } else {
       setStatus(`Item with barcode "${code}" not found`);
@@ -137,23 +156,49 @@ export default withConvexProvider(function Store({ token, isAdmin = false }: { t
   // Render the store UI
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Stock</h2>
-        <button
-          type="button"
-          onClick={() => setShowScanner(!showScanner)}
-          className="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300"
-        >
-          {showScanner ? "Close Scanner" : "Scan Barcode"}
-        </button>
-      </div>
+      <div className="flex flex-col gap-2 p-4 border border-gray-200 rounded-lg bg-gray-50">
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <BarcodeScanner
+              onResult={handleScan}
+              label="Scan Barcode"
+              buttonClassName="h-10 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition cursor-pointer flex items-center justify-center whitespace-nowrap"
+            />
+          </div>
 
-      {showScanner && (
-        <div className="border border-gray-300 rounded-md p-2 bg-gray-50">
-          <p className="text-sm text-gray-500 mb-2 text-center">Scan an item to add to your cart</p>
-          <BarcodeScanner onResult={handleScan} />
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-medium text-gray-700 mb-1">Barcode</label>
+            <input
+              type="text"
+              value={barcodeInput}
+              onChange={(e) => setBarcodeInput(e.target.value)}
+              placeholder="Scan or enter barcode"
+              className="w-full h-10 px-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div className="w-24">
+            <label className="block text-xs font-medium text-gray-700 mb-1">Quantity</label>
+            <input
+              type="number"
+              value={qtyInput}
+              onChange={(e) => setQtyInput(e.target.value)}
+              min="1"
+              className="w-full h-10 px-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={handleAddFromBarcode}
+              className="h-10 px-6 bg-green-600 text-white rounded hover:bg-green-700 transition font-medium"
+            >
+              Submit
+            </button>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Grid of available items */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -223,7 +268,7 @@ export default withConvexProvider(function Store({ token, isAdmin = false }: { t
 
       {/* Status message (success or error) */}
       {status && (
-        <p className={`text-sm ${status.includes("successful") || status.includes("Added") ? "text-green-600" : "text-red-600"}`}>
+        <p className={`text-sm ${status.includes("successful") || status.includes("Added") || status.includes("Scanned") ? "text-green-600" : "text-red-600"}`}>
           {status}
         </p>
       )}
