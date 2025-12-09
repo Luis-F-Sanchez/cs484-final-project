@@ -12,13 +12,15 @@
 // ============================================
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import BarcodeScanner from "./BarcodeScanner";
 import { withConvexProvider } from "../lib/convex.tsx";
+import { useEffect } from "react";
 
 export default withConvexProvider(function ContributeForm({ token }: { token: string | null }) {
-  const submitPending = useMutation(api.queries.pending_submit)
+  const submitPending = useMutation(api.queries.pending_submit);
+  const restockItem = useMutation(api.queries.inventory_restock);
 
   // Form state - tracks user input
   const [name, setName] = useState("");           // Item name (e.g., "Apples")
@@ -26,6 +28,19 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
   const [quantity, setQuantity] = useState("");   // How many units
   const [unitPrice, setUnitPrice] = useState(""); // Price per unit
   const [status, setStatus] = useState<string | null>(null); // Success/error messages
+
+  // Query existing item by barcode
+  const existingItem = useQuery(api.queries.inventory_getByBarcode, { barcode: barcode.trim() });
+
+  // Auto-fill name and price if barcode matches existing item
+  useEffect(() => {
+    if (existingItem) {
+      setName(existingItem.name);
+      setUnitPrice(existingItem.price.toString());
+    } else if (barcode.trim()) {
+      // If typing a new barcode, keep fields editable
+    }
+  }, [existingItem, barcode]);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,15 +66,23 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
     const totalSpent = qtyNum * priceNum;
 
     try {
-      // Add add item to Admin's inventory request list
-      await submitPending({ token, name: name.trim(), quantity: qtyNum, price: priceNum, barcode: barcode.trim() || undefined });
+      if (existingItem) {
+        // DIRECT RESTOCK
+        await restockItem({ token, barcode: barcode.trim(), quantity: qtyNum, price: priceNum });
+        setStatus(`Restocked "${name}" (Quantity: +${qtyNum})`);
+      } else {
+        // NEW SUBMISSION (PENDING)
+        await submitPending({ token, name: name.trim(), quantity: qtyNum, price: priceNum, barcode: barcode.trim() || undefined });
+        setStatus(`Submitted "${name}" for approval`);
+      }
 
-      // Show success message
-      setStatus(`Submitted "${name}" for approval`);
-      setName("");
-      setBarcode("");
+      // Reset form
+      if (!existingItem) setName(""); // Only clear name if it wasn't locked
       setQuantity("");
       setUnitPrice("");
+      // Keep barcode? Or clear it? User workflow implies single scan. Let's clear logic to be safe.
+      setBarcode("");
+      setName(""); // Clear name anyway for fresh state
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "Failed to submit item contribution request. Please try again";
@@ -79,13 +102,16 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
 
       {/* Item Name Input */}
       <div>
-        <label className="block text-sm font-medium mb-1">Item Name</label>
+        <label className="block text-sm font-medium mb-1">
+          {existingItem ? "Item Name (Automatically deduced from barcode)" : "Item Name"}
+        </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g., Apples"
-          className="w-full rounded border px-3 py-2"
+          className={`w-full rounded border px-3 py-2 ${existingItem ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
+          disabled={!!existingItem}
         />
       </div>
 
@@ -122,7 +148,9 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
 
       {/* Unit Price Input */}
       <div>
-        <label className="block text-sm font-medium mb-1">Unit Price ($)</label>
+        <label className="block text-sm font-medium mb-1">
+          {existingItem ? "Unit Price ($) (Automatically deduced from barcode)" : "Unit Price ($)"}
+        </label>
         <input
           type="number"
           value={unitPrice}
@@ -130,7 +158,8 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
           min={0.01}
           step={0.01}
           placeholder="e.g., 1.25"
-          className="w-full rounded border px-3 py-2"
+          className={`w-full rounded border px-3 py-2 ${existingItem ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
+          disabled={!!existingItem}
         />
       </div>
 
@@ -150,7 +179,7 @@ export default withConvexProvider(function ContributeForm({ token }: { token: st
       {/* Status Message (success or error) */}
       {status && (
         <p
-          className={`text-sm ${status.toLowerCase().includes("added") ? "text-green-600" : "text-red-600"
+          className={`text-sm ${status.toLowerCase().includes("added") || status.toLowerCase().includes("restocked") || status.toLowerCase().includes("submitted") ? "text-green-600" : "text-red-600"
             }`}
         >
           {status}

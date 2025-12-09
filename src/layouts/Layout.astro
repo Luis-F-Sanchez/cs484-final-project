@@ -1,12 +1,10 @@
 ---
 import "../styles/global.css";
 import AuthStatus from "../components/AuthStatus.tsx";
+import TutorialSidebar from "../components/TutorialSidebar.tsx";
 ---
 
-
-<!-- THIS FILE MATTERS FOR NAVBAR THATS IT -->
-
-<!doctype html>
+<!-- THIS FILE MATTERS FOR NAVBAR THATS IT --><!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -16,20 +14,52 @@ import AuthStatus from "../components/AuthStatus.tsx";
     <title>UIC Food Coop</title>
   </head>
   <body>
-    <nav class="border-b bg-white">
-      <div
-        class="flex w-full items-center px-6 py-4"
-      >
+    <nav class="border-b bg-white sticky top-0 z-50">
+      <div class="flex w-full items-center px-6 py-4">
         <div class="flex flex-1">
-          <a href="/" class="text-3xl font-extrabold tracking-tight hover:text-blue-600">Food Coop</a>
+          <a
+            href="/"
+            class="text-3xl font-extrabold tracking-tight hover:text-blue-600"
+            >Food Coop</a
+          >
         </div>
         <div class="flex flex-1 justify-center">
           <ul class="flex items-center gap-10 text-sm">
-            <li><a href="/" class="text-xl font-bold tracking-tight hover:text-blue-600">Home</a></li>
-            <li><a href="/contribute" class="text-xl font-bold tracking-tight hover:text-blue-600">Contribute</a></li>
-            <li><a href="/wallet" class="text-xl font-bold tracking-tight hover:text-blue-600">Wallet</a></li>
-            <li><a href="/auth" class="text-xl font-bold tracking-tight hover:text-blue-600">Login/Register</a></li>
-            <li><a href="/admin" class="text-xl font-bold tracking-tight hover:text-blue-600">Admin</a></li>
+            <li>
+              <a
+                href="/"
+                class="text-xl font-bold tracking-tight hover:text-blue-600"
+                >Home</a
+              >
+            </li>
+            <li>
+              <a
+                href="/contribute"
+                class="text-xl font-bold tracking-tight hover:text-blue-600"
+                >Contribute</a
+              >
+            </li>
+            <li>
+              <a
+                href="/wallet"
+                class="text-xl font-bold tracking-tight hover:text-blue-600"
+                >Wallet</a
+              >
+            </li>
+            <li>
+              <a
+                href="/auth"
+                class="text-xl font-bold tracking-tight hover:text-blue-600"
+                >Login/Register</a
+              >
+            </li>
+            <li>
+              <a
+                href="/admin"
+                class="text-xl font-bold tracking-tight hover:text-blue-600"
+                >Admin</a
+              >
+            </li>
           </ul>
         </div>
         <div class="flex flex-1 justify-end">
@@ -37,6 +67,11 @@ import AuthStatus from "../components/AuthStatus.tsx";
         </div>
       </div>
     </nav>
-    <slot />
+    <div class="flex flex-1 relative">
+      <TutorialSidebar client:load />
+      <div class="flex-1 w-full">
+        <slot />
+      </div>
+    </div>
   </body>
 </html>
